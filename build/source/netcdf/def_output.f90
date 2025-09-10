@@ -286,6 +286,7 @@ contains
  integer(i4b),intent(out)      :: err               ! error code
  character(*),intent(out)      :: message           ! error message
  ! local
+ integer(i4b)                  :: ivtype_local      ! local variable type
  integer(i4b)                  :: iVar              ! variable index
  integer(i4b)                  :: iVarId            ! netcdf variable index
  integer(i4b)                  :: iStat             ! stat index
@@ -306,6 +307,7 @@ contains
 
  ! loop through metaData
  do iVar = 1,size(metaData)
+  ivtype_local = ivtype
 
   ! check that the variable is desired
   if (metaData(iVar)%varType==iLookvarType%unknown) cycle
@@ -319,6 +321,7 @@ contains
 
   ! special case of the time variable
   if(metaData(iVar)%varName == 'time')then
+   ivtype_local = nf90_double
    call cloneStruc(dimensionIDs, lowerBound=1, source=(/Timestep_DimID/),err=err,message=cmessage); writechunk=(/ timeChunk /)
    if(err/=0)then; message=trim(message)//trim(cmessage)//' [variable '//trim(metaData(iVar)%varName)//']'; return; end if
 
@@ -372,7 +375,7 @@ contains
   endif
 
   ! define variable
-  err = nf90_def_var(ncid,trim(catName),ivtype,dimensionIDs,iVarId,deflate_level=outputCompressionLevel)
+  err = nf90_def_var(ncid,trim(catName),ivtype_local,dimensionIDs,iVarId,deflate_level=outputCompressionLevel)
   call netcdf_err(err,message); if (err/=0) return
 
   err = nf90_def_var_chunking(ncid,iVarId,NF90_CHUNKED,writechunk)
